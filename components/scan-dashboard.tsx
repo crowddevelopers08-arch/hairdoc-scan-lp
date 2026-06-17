@@ -323,17 +323,20 @@ export async function ScanDashboard({
                   <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                     {scan.formName || "website leads"}
                   </span>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      scan.telecrmStatus.toLowerCase() === "created" ||
-                      scan.telecrmStatus.toLowerCase() === "updated" ||
-                      scan.telecrmStatus.toLowerCase() === "submitted"
-                        ? "bg-emerald-500/15 text-emerald-600"
-                        : "bg-destructive/10 text-destructive"
-                    }`}
-                  >
-                    TeleCRM: {scan.telecrmStatus || "pending"}
-                  </span>
+                  {(() => {
+                    const s = scan.telecrmStatus.toLowerCase()
+                    const synced = scan.telecrmLeadIds || ["created", "updated", "submitted", "success", "ok", "accepted"].includes(s)
+                    const failed = ["failed", "error", "missing_config"].includes(s)
+                    return (
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        synced ? "bg-emerald-500/15 text-emerald-600"
+                        : failed ? "bg-destructive/10 text-destructive"
+                        : "bg-amber-500/15 text-amber-600"
+                      }`}>
+                        TeleCRM: {scan.telecrmStatus || "pending"}
+                      </span>
+                    )
+                  })()}
                 </div>
                 {scan.pageUrl && (
                   <a

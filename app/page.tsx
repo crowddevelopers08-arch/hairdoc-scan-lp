@@ -39,6 +39,19 @@ export default function Home() {
   }
 
   const handleScanComplete = () => {
+    // Save lead immediately when scan completes — fire and forget
+    fetch("/api/save-scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: formData.name,
+        phone: formData.phone,
+        problem: formData.problem || "hair-fall",
+        imageData: capturedImage ?? "",
+        pageUrl: typeof window !== "undefined" ? window.location.href : "",
+      }),
+    }).catch((err) => console.error("Failed to save scan:", err))
+
     setAppState("results")
   }
 

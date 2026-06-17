@@ -1,10 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { FileText, ArrowLeft, Download, CheckCircle2, Loader2 } from "lucide-react"
 import type { FormData } from "./form-modal"
 
@@ -102,62 +98,20 @@ async function downloadFromPublic(pdfPath: string, fileName: string) {
   window.URL.revokeObjectURL(blobUrl)
 }
 export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProps) {
-  const [pdfFormOpen, setPdfFormOpen] = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
-  const [pdfForm, setPdfForm] = useState({ name: formData.name || "", phone: formData.phone || "", location: "" })
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [locationSelect, setLocationSelect] = useState("")
-  const [clinicVisit, setClinicVisit] = useState<"" | "yes" | "no">("")
 
   const problem = (formData.problem || "hair-fall") as keyof typeof resultsData
   const data = resultsData[problem]
 
   if (!data) return null
 
-  const handleDownload = () => {
-    setPdfForm({ name: formData.name || "", phone: formData.phone || "", location: "" })
-    setLocationSelect("")
-    setSubmitError(null)
-    setClinicVisit("")
-    setPdfFormOpen(true)
-  }
-
-  const handlePdfFormSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!pdfForm.name.trim() || !pdfForm.phone.trim() || !pdfForm.location.trim()) return
+  const handleDownload = async () => {
     setPdfGenerating(true)
     try {
-      const saveRes = await fetch("/api/save-scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: pdfForm.name,
-          phone: pdfForm.phone,
-          location: pdfForm.location,
-          problem,
-          imageData: capturedImage ?? "",
-          pageUrl: window.location.href,
-        }),
-      })
-      if (!saveRes.ok) {
-        const payload = await saveRes.json().catch(() => ({ error: "Failed to save scan" }))
-        throw new Error(payload?.error || "Failed to save scan")
-      }
-
-      const fileName = "Online-Hair-and-Scalp-Consultation.pdf"
-      await downloadFromPublic(CONSULTATION_PDF, fileName)
-      setPdfFormOpen(false)
+      await downloadFromPublic(CONSULTATION_PDF, "Online-Hair-and-Scalp-Consultation.pdf")
       window.location.assign("/thank-you")
     } catch (err) {
-      console.error("Submit/download failed:", err)
-      const msg = err instanceof Error ? err.message : "Something went wrong"
-      if (msg.includes("already been used")) {
-        setSubmitError("This mobile number has already submitted a lead. Please use a different number.")
-      } else if (msg.includes("PDF not found")) {
-        setSubmitError(msg)
-      } else {
-        setSubmitError("Something went wrong. Please try again.")
-      }
+      console.error("Download failed:", err)
     } finally {
       setPdfGenerating(false)
     }
@@ -321,120 +275,6 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
         </div>
       </div>
 
-      {/* ── PDF Form Dialog ── */}
-      <Dialog open={pdfFormOpen} onOpenChange={(open) => !pdfGenerating && setPdfFormOpen(open)}>
-        <DialogContent data-pdf-dialog className="border-primary/20 bg-card/95 backdrop-blur-xl sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl font-bold text-foreground">Download Your Guide</DialogTitle>
-            <DialogDescription className="text-center text-sm text-muted-foreground">
-              {pdfGenerating ? "Generating your PDF, please wait…" : "Enter your name and phone number to generate the PDF"}
-            </DialogDescription>
-          </DialogHeader>
-
-          {pdfGenerating ? (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Building your personalized guide…</p>
-            </div>
-          ) : (
-            <form onSubmit={handlePdfFormSubmit} className="mt-4 flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="pdf-name" className="text-foreground">Name</Label>
-                <Input
-                  id="pdf-name"
-                  placeholder="Enter your name"
-                  value={pdfForm.name}
-                  onChange={(e) => setPdfForm({ ...pdfForm, name: e.target.value })}
-                  className="border-border/50 bg-background/50 focus:border-primary focus:ring-primary"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="pdf-phone" className="text-foreground">Phone Number</Label>
-                <Input
-                  id="pdf-phone"
-                  type="tel"
-                  placeholder="Enter your phone number"
-                  value={pdfForm.phone}
-                  onChange={(e) => { setSubmitError(null); setPdfForm({ ...pdfForm, phone: e.target.value }) }}
-                  className={submitError ? "border-destructive bg-background/50 focus:border-destructive focus:ring-destructive" : "border-border/50 bg-background/50 focus:border-primary focus:ring-primary"}
-                />
-                {submitError && (
-                  <p className="text-xs font-medium text-destructive">{submitError}</p>
-                )}
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="pdf-location" className="text-foreground">Location</Label>
-                <select
-                  id="pdf-location"
-                  value={locationSelect}
-                  onChange={(e) => {
-                    setLocationSelect(e.target.value)
-                    if (e.target.value !== "other") setPdfForm({ ...pdfForm, location: e.target.value })
-                    else setPdfForm({ ...pdfForm, location: "" })
-                  }}
-                  className="h-10 w-full rounded-md border border-border/50 bg-background/50 px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">Select your location</option>
-                  <option value="Thane">Thane</option>
-                  <option value="Pune">Pune</option>
-                  <option value="Aurangabad">Aurangabad</option>
-                  <option value="other">Other City</option>
-                </select>
-                {locationSelect === "other" && (
-                  <Input
-                    id="pdf-location-other"
-                    placeholder="Enter your location"
-                    value={pdfForm.location}
-                    onChange={(e) => setPdfForm({ ...pdfForm, location: e.target.value })}
-                    className="border-border/50 bg-background/50 focus:border-primary focus:ring-primary"
-                    autoFocus
-                  />
-                )}
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label className="text-foreground">Are you willing to visit HairDoc clinic?</Label>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setClinicVisit("yes")}
-                    style={{
-                      flex: 1, padding: "10px", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem",
-                      border: clinicVisit === "yes" ? "2px solid #F5C200" : "2px solid rgba(245,194,0,0.25)",
-                      background: clinicVisit === "yes" ? "rgba(245,194,0,0.18)" : "rgba(245,194,0,0.05)",
-                      color: clinicVisit === "yes" ? "#F5C200" : "#9a9a9a",
-                      cursor: "pointer", transition: "all 0.15s"
-                    }}
-                  >
-                    Yes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setClinicVisit("no"); setPdfFormOpen(false) }}
-                    style={{
-                      flex: 1, padding: "10px", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem",
-                      border: clinicVisit === "no" ? "2px solid #ef4444" : "2px solid rgba(239,68,68,0.25)",
-                      background: clinicVisit === "no" ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.04)",
-                      color: clinicVisit === "no" ? "#ef4444" : "#9a9a9a",
-                      cursor: "pointer", transition: "all 0.15s"
-                    }}
-                  >
-                    No
-                  </button>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={!pdfForm.name.trim() || !pdfForm.phone.trim() || !pdfForm.location.trim() || clinicVisit !== "yes"}
-                className="mt-2 w-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(245,194,0,0.4)] disabled:opacity-50"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Generate & Download PDF
-              </Button>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

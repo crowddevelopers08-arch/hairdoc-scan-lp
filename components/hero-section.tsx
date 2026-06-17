@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { FormData } from "./form-modal"
 
@@ -19,19 +19,27 @@ const stats = [
 
 export function HeroSection({ onStartScan }: HeroSectionProps) {
   const [showForm, setShowForm] = useState(false)
-  const [problem, setProblem] = useState<FormData["problem"]>("")
-  const [error, setError] = useState("")
+  const [name, setName] = useState("")
+  const [phone, setPhone] = useState("")
+  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({})
 
   const validate = () => {
-    if (!problem) { setError("Please select a concern"); return false }
-    setError(""); return true
+    const newErrors: { name?: string; phone?: string } = {}
+    if (!name.trim()) newErrors.name = "Name is required"
+    if (!phone.trim()) newErrors.phone = "Phone number is required"
+    else if (!/^\+?[\d\s-]{10,}$/.test(phone)) newErrors.phone = "Please enter a valid phone number"
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!validate()) return
-    onStartScan({ name: "", phone: "", problem })
+    onStartScan({ name, phone, problem: "hair-fall" })
     setShowForm(false)
+    setName("")
+    setPhone("")
+    setErrors({})
   }
 
   return (
@@ -235,35 +243,32 @@ export function HeroSection({ onStartScan }: HeroSectionProps) {
               Start Your Hair Analysis
             </DialogTitle>
             <DialogDescription className="text-center text-sm text-muted-foreground">
-              Select your concern to continue to camera scan
+              Enter your details to continue to camera scan
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-5">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="hero-problem" className="text-foreground">
-                Select Your Concern
-              </Label>
-              <Select
-                value={problem}
-                onValueChange={(value: "hair-fall" | "crown-thinning" | "frontal-hair-loss" | "dandruff-scalp-issues" | "low-hair-density") =>
-                  setProblem(value)
-                }
-              >
-                <SelectTrigger
-                  id="hero-problem"
-                  className="border-border/50 bg-background/50 focus:border-primary focus:ring-primary"
-                >
-                  <SelectValue placeholder="Choose a hair concern" />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-card">
-                  <SelectItem value="hair-fall">Hair Fall</SelectItem>
-                  <SelectItem value="crown-thinning">Crown Thinning</SelectItem>
-                  <SelectItem value="frontal-hair-loss">Frontal Hair Loss</SelectItem>
-                  <SelectItem value="dandruff-scalp-issues">Dandruff / Scalp Issues</SelectItem>
-                  <SelectItem value="low-hair-density">Low Hair Density</SelectItem>
-                </SelectContent>
-              </Select>
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Label htmlFor="hero-name" className="text-foreground">Name</Label>
+              <Input
+                id="hero-name"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="border-border/50 bg-background/50 focus:border-primary focus:ring-primary"
+              />
+              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="hero-phone" className="text-foreground">Phone Number</Label>
+              <Input
+                id="hero-phone"
+                type="tel"
+                placeholder="Enter your phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="border-border/50 bg-background/50 focus:border-primary focus:ring-primary"
+              />
+              {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
             </div>
             <Button
               type="submit"
