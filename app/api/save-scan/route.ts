@@ -81,7 +81,7 @@ async function addNoteToTelecrmLead(leadId: string, name: string, phone: string,
   }
 }
 
-async function syncTelecrmLead(name: string, phone: string, pageUrl: string, imageUrl: string) {
+async function syncTelecrmLead(name: string, phone: string, imageUrl: string) {
   const apiUrl = process.env.TELECRM_API_URL
   const apiKey = process.env.TELECRM_API_KEY
 
@@ -90,8 +90,16 @@ async function syncTelecrmLead(name: string, phone: string, pageUrl: string, ima
     return { ok: false, status: "missing_config", leadIds: "", leadIdsArr: [] as string[], error: "TeleCRM not configured." }
   }
 
-  const note = [`Hair Scan Lead`, `Name: ${name}`, `Phone: ${phone}`, imageUrl ? `Scan Image: ${imageUrl}` : ""]
-    .filter(Boolean).join("\n")
+  const detailsNote = [`Details:`, `Name: ${name}`, `Phone: ${phone}`, `Form: ${FORM_NAME}`, imageUrl ? `Scan Image: ${imageUrl}` : null]
+    .filter(Boolean).join(" | ")
+
+  const actions = [
+    { type: "SYSTEM_NOTE", text: detailsNote },
+    { type: "SYSTEM_NOTE", text: `Form: ${FORM_NAME}` },
+    { type: "SYSTEM_NOTE", text: `Name: ${name}` },
+    { type: "SYSTEM_NOTE", text: `Phone: ${phone}` },
+    imageUrl ? { type: "SYSTEM_NOTE", text: `Scan Image: ${imageUrl}` } : null,
+  ].filter(Boolean)
 
   try {
     const response = await fetch(apiUrl, {
@@ -103,9 +111,8 @@ async function syncTelecrmLead(name: string, phone: string, pageUrl: string, ima
         "api-key": apiKey,
       },
       body: JSON.stringify({
-        fields: { phone, name, form_name: FORM_NAME, source: FORM_NAME, website_url: pageUrl, live_url: pageUrl, scan_image_url: imageUrl },
-        note,
-        remark: note,
+        fields: { phone, name, form_name: FORM_NAME, scan_image_url: imageUrl },
+        actions,
       }),
     })
 
@@ -208,7 +215,7 @@ export async function POST(req: NextRequest) {
     const imageUrl = scanId ? `${origin}/api/scan-image/${scanId}` : ""
 
     // Call TeleCRM and get status
-    const telecrm = await syncTelecrmLead(normalizedName, normalizedPhone, normalizedPageUrl, imageUrl)
+    const telecrm = await syncTelecrmLead(normalizedName, normalizedPhone, imageUrl)
 
     // Save TeleCRM status to DB immediately
     await saveTelecrmStatus(prisma, scanId, telecrm)
@@ -220,51 +227,19 @@ export async function POST(req: NextRequest) {
     if (process.env.TELECRM_API_URL && process.env.TELECRM_API_KEY && telecrm.ok) {
       const apiKey = process.env.TELECRM_API_KEY
       const enterpriseId = extractEnterpriseId(process.env.TELECRM_API_URL)
-      try {
-        const phone10 = normalizedPhone.replace(/\D/g, "").slice(-10)
-        let leadIds = telecrm.leadIdsArr
-
-        if (leadIds.length === 0) {
-          // Try GET /leads?phone=xxx
-          const getRes = await fetch(
-            `https://next-api.telecrm.in/v2/enterprise/${enterpriseId}/leads?phone=${phone10}`,
-            { headers: { Authorization: `Bearer ${apiKey}`, "x-api-key": apiKey, "api-key": apiKey } },
-          )
-          const getRaw = await getRes.text().catch(() => "")
-          console.log(`[TeleCRM] GET leads HTTP ${getRes.status}:`, getRaw.slice(0, 400))
-          try {
-            const b = JSON.parse(getRaw) as Record<string, unknown>
-            const arr = (b?.data as Record<string, unknown>)?.leads ?? b?.leads ?? b?.data ?? []
-            if (Array.isArray(arr) && arr.length > 0) {
-              leadIds = [String(arr[0]._id ?? arr[0].id ?? arr[0].leadId ?? "")].filter(Boolean)
-              console.log("[TeleCRM] Found lead IDs:", leadIds)
-            }
-          } catch { /* not JSON */ }
-        }
-
-        if (leadIds.length > 0) {
+      // Note: TeleCRM next-api only exposes autoupdatelead — no search or note endpoints exist.
+      // Individual note entries require TeleCRM's web form API (contact TeleCRM support).
+      if (telecrm.leadIdsArr.length > 0) {
+        try {
           await Promise.all(
-            leadIds.flatMap((leadId) => [
+            telecrm.leadIdsArr.flatMap((leadId) => [
               imageData ? uploadImageToTelecrmLead(leadId, imageData, apiKey, enterpriseId) : Promise.resolve(),
               addNoteToTelecrmLead(leadId, normalizedName, normalizedPhone, imageUrl, apiKey, enterpriseId),
             ]),
           )
-        } else {
-          // Fallback: try addnote identified by phone (no leadId)
-          const noteText = [`Hair Scan Lead`, `Name: ${normalizedName}`, `Phone: ${normalizedPhone}`, imageUrl ? `Scan Image: ${imageUrl}` : ""].filter(Boolean).join("\n")
-          const noteRes = await fetch(
-            `https://next-api.telecrm.in/v2/enterprise/${enterpriseId}/addnote`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}`, "x-api-key": apiKey, "api-key": apiKey },
-              body: JSON.stringify({ phone: phone10, note: noteText, content: noteText }),
-            },
-          )
-          const noteRaw = await noteRes.text().catch(() => "")
-          console.log(`[TeleCRM] addnote by phone HTTP ${noteRes.status}:`, noteRaw.slice(0, 300))
+        } catch (err) {
+          console.error("[TeleCRM] Note/upload error:", err)
         }
-      } catch (err) {
-        console.error("[TeleCRM] Note error:", err)
       }
     }
 
