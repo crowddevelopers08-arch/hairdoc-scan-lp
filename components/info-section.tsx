@@ -32,17 +32,17 @@ const treatments = [
     suited: "Hair thinning, weak roots, low density.",
   },
   {
-    title: "Internal Treatment",
+    title: "Advance Homeopathy Medicine",
     desc: "Helps address internal factors like stress, lifestyle imbalance, and nutritional triggers that may affect the hair growth cycle.",
     suited: "Recurring hair fall, stress-linked hair loss, weak growth.",
   },
   {
-    title: "Beach Flower Extract Support",
+    title: "Batch Flower Remedies Extract Support",
     desc: "Used as holistic support to help manage stress-related, sleep-related, and psychosomatic factors linked with hair and scalp concerns.",
     suited: "Stress, insomnia, headache, scalp discomfort.",
   },
   {
-    title: "Hairdoc Care Kit",
+    title: "Hair Growth Serum Medicaled oil and shampoo",
     desc: "A guided home-care routine that supports your in-clinic treatment and helps maintain scalp hygiene between sessions.",
     suited: "Daily care, scalp maintenance, treatment support.",
   },
