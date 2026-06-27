@@ -44,9 +44,9 @@ export function HeroSection({ onStartScan }: HeroSectionProps) {
 
   return (
     <section
+      className="md:min-h-screen"
       style={{
         position: "relative",
-        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
