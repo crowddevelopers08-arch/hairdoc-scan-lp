@@ -53,7 +53,7 @@ export function HeroSection({ onStartScan }: HeroSectionProps) {
         justifyContent: "center",
         overflow: "hidden",
         background: "#080b12",
-        padding: "60px 20px",
+        padding: "20px 20px",
       }}
     >
 
