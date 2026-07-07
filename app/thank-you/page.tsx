@@ -3,11 +3,20 @@ import Script from "next/script"
 export default function ThankYouPage() {
   return (
     <>
+      {/* Meta Pixel - Submit Application */}
       <Script id="meta-pixel-submit-application" strategy="afterInteractive">
         {`
           fbq('track', 'SubmitApplication');
         `}
       </Script>
+
+      {/* Google Ads - Conversion Event */}
+      <Script id="google-ads-conversion" strategy="afterInteractive">
+        {`
+          gtag('event', 'conversion', {'send_to': 'AW-18073508286/6Ls6CNPKpcwcEL6zj6pD'});
+        `}
+      </Script>
+
       <main
         style={{
           minHeight: "100vh",
