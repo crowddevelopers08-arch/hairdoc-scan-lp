@@ -7,6 +7,7 @@ export const revalidate = 0
 type DashboardSearchParams = Promise<{
   q?: string
   problem?: string
+  formName?: string
   location?: string
   dateFrom?: string
   dateTo?: string

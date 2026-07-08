@@ -8,7 +8,7 @@ const HAS_DASHBOARD_TWO_DB = Boolean(
   process.env.DASHBOARD_TWO_POSTGRES_PRISMA_URL || process.env.DASHBOARD_TWO_DATABASE_URL,
 )
 
-const FORM_NAME = "website leads"
+const DEFAULT_FORM_NAME = "website leads"
 const DUPLICATE_PHONE_ERROR = "This mobile number has already been used to submit a lead."
 
 function getRequestOrigin(req: NextRequest) {
@@ -34,11 +34,11 @@ function extractEnterpriseId(apiUrl: string): string {
   return apiUrl.match(/\/enterprise\/([^/]+)\//)?.[1] ?? ""
 }
 
-async function findDuplicateScanByPhone(client: PrismaClient, phone: string) {
+async function findDuplicateScanByPhone(client: PrismaClient, phone: string, formName: string) {
   const key = getPhoneDuplicateKey(phone)
   if (!key) return null
-  const scans = await client.scan.findMany({ select: { id: true, phone: true } })
-  return scans.find((s) => getPhoneDuplicateKey(s.phone) === key) ?? null
+  const scans = await client.scan.findMany({ select: { id: true, phone: true, formName: true } })
+  return scans.find((s) => getPhoneDuplicateKey(s.phone) === key && s.formName === formName) ?? null
 }
 
 async function uploadImageToTelecrmLead(leadId: string, imageData: string, apiKey: string, enterpriseId: string) {
@@ -81,7 +81,7 @@ async function addNoteToTelecrmLead(leadId: string, name: string, phone: string,
   }
 }
 
-async function syncTelecrmLead(name: string, phone: string, imageUrl: string) {
+async function syncTelecrmLead(name: string, phone: string, imageUrl: string, formName: string, scheduleSummary: string) {
   const apiUrl = process.env.TELECRM_API_URL
   const apiKey = process.env.TELECRM_API_KEY
 
@@ -90,14 +90,15 @@ async function syncTelecrmLead(name: string, phone: string, imageUrl: string) {
     return { ok: false, status: "missing_config", leadIds: "", leadIdsArr: [] as string[], error: "TeleCRM not configured." }
   }
 
-  const detailsNote = [`Details:`, `Name: ${name}`, `Phone: ${phone}`, `Form: ${FORM_NAME}`, imageUrl ? `Scan Image: ${imageUrl}` : null]
+  const detailsNote = [`Details:`, `Name: ${name}`, `Phone: ${phone}`, `Form: ${formName}`, scheduleSummary ? `Consultation: ${scheduleSummary}` : null, imageUrl ? `Scan Image: ${imageUrl}` : null]
     .filter(Boolean).join(" | ")
 
   const actions = [
     { type: "SYSTEM_NOTE", text: detailsNote },
-    { type: "SYSTEM_NOTE", text: `Form: ${FORM_NAME}` },
+    { type: "SYSTEM_NOTE", text: `Form: ${formName}` },
     { type: "SYSTEM_NOTE", text: `Name: ${name}` },
     { type: "SYSTEM_NOTE", text: `Phone: ${phone}` },
+    scheduleSummary ? { type: "SYSTEM_NOTE", text: `Consultation: ${scheduleSummary}` } : null,
     imageUrl ? { type: "SYSTEM_NOTE", text: `Scan Image: ${imageUrl}` } : null,
   ].filter(Boolean)
 
@@ -111,7 +112,7 @@ async function syncTelecrmLead(name: string, phone: string, imageUrl: string) {
         "api-key": apiKey,
       },
       body: JSON.stringify({
-        fields: { phone, name, form_name: FORM_NAME, scan_image_url: imageUrl },
+        fields: { phone, name, form_name: formName, consultation_schedule: scheduleSummary, scan_image_url: imageUrl },
         actions,
       }),
     })
@@ -145,7 +146,7 @@ async function createScanRecord(client: PrismaClient, data: {
   imageData: string; pageUrl: string; formName: string
 }, preventDuplicate: boolean) {
   if (preventDuplicate) {
-    const existing = await findDuplicateScanByPhone(client, data.phone)
+    const existing = await findDuplicateScanByPhone(client, data.phone, data.formName)
     if (existing) return { id: null, duplicate: true }
   }
   const scan = await client.scan.create({ data })
@@ -171,9 +172,9 @@ async function saveTelecrmStatus(client: PrismaClient, id: number | null, telecr
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, phone, location, problem, imageData, pageUrl } = await req.json()
+    const { name, phone, location, problem, imageData, pageUrl, formName, consultationDate, consultationTime } = await req.json()
 
-    if (!name || !phone || !problem || !imageData) {
+    if (!name || !phone || !problem) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -182,10 +183,19 @@ export async function POST(req: NextRequest) {
     const normalizedLocation = typeof location === "string" ? location.trim() : ""
     const normalizedProblem = String(problem).trim()
     const normalizedPageUrl = normalizeUrl(pageUrl, req)
+    const normalizedImageData = typeof imageData === "string" ? imageData : ""
+    const normalizedFormName = typeof formName === "string" && formName.trim() ? formName.trim() : DEFAULT_FORM_NAME
+    const normalizedConsultationDate = typeof consultationDate === "string" ? consultationDate.trim() : ""
+    const normalizedConsultationTime = typeof consultationTime === "string" ? consultationTime.trim() : ""
+    const scheduleSummary = [normalizedConsultationDate, normalizedConsultationTime].filter(Boolean).join(" | ")
 
     const scanData = {
       name: normalizedName, phone: normalizedPhone, location: normalizedLocation,
-      problem: normalizedProblem, imageData, pageUrl: normalizedPageUrl, formName: FORM_NAME,
+      problem: normalizedProblem, imageData: normalizedImageData, pageUrl: normalizedPageUrl, formName: normalizedFormName,
+    }
+
+    if (scheduleSummary) {
+      scanData.location = scheduleSummary
     }
 
     let scanId: number | null = null
@@ -212,10 +222,10 @@ export async function POST(req: NextRequest) {
     }
 
     const origin = getRequestOrigin(req)
-    const imageUrl = scanId ? `${origin}/api/scan-image/${scanId}` : ""
+    const imageUrl = scanId && normalizedImageData ? `${origin}/api/scan-image/${scanId}` : ""
 
     // Call TeleCRM and get status
-    const telecrm = await syncTelecrmLead(normalizedName, normalizedPhone, imageUrl)
+    const telecrm = await syncTelecrmLead(normalizedName, normalizedPhone, imageUrl, normalizedFormName, scheduleSummary)
 
     // Save TeleCRM status to DB immediately
     await saveTelecrmStatus(prisma, scanId, telecrm)
@@ -233,7 +243,7 @@ export async function POST(req: NextRequest) {
         try {
           await Promise.all(
             telecrm.leadIdsArr.flatMap((leadId) => [
-              imageData ? uploadImageToTelecrmLead(leadId, imageData, apiKey, enterpriseId) : Promise.resolve(),
+              normalizedImageData ? uploadImageToTelecrmLead(leadId, normalizedImageData, apiKey, enterpriseId) : Promise.resolve(),
               addNoteToTelecrmLead(leadId, normalizedName, normalizedPhone, imageUrl, apiKey, enterpriseId),
             ]),
           )

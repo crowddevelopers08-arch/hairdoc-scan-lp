@@ -35,6 +35,7 @@ const skinProblems = [
 type DashboardSearchParams = Promise<{
   q?: string
   problem?: string
+  formName?: string
   location?: string
   dateFrom?: string
   dateTo?: string
@@ -112,6 +113,7 @@ function buildDashboardUrl(
   params: {
     q?: string
     problem?: string
+    formName?: string
     location?: string
     dateFrom?: string
     dateTo?: string
@@ -122,6 +124,7 @@ function buildDashboardUrl(
 
   if (params.q) searchParams.set("q", params.q)
   if (params.problem) searchParams.set("problem", params.problem)
+  if (params.formName) searchParams.set("formName", params.formName)
   if (params.location) searchParams.set("location", params.location)
   if (params.dateFrom) searchParams.set("dateFrom", params.dateFrom)
   if (params.dateTo) searchParams.set("dateTo", params.dateTo)
@@ -136,6 +139,7 @@ function buildExportUrl(
   params: {
     q?: string
     problem?: string
+    formName?: string
     location?: string
     dateFrom?: string
     dateTo?: string
@@ -146,6 +150,7 @@ function buildExportUrl(
   if (basePath === "/dashboardtwo") searchParams.set("source", "dashboardtwo")
   if (params.q) searchParams.set("q", params.q)
   if (params.problem) searchParams.set("problem", params.problem)
+  if (params.formName) searchParams.set("formName", params.formName)
   if (params.location) searchParams.set("location", params.location)
   if (params.dateFrom) searchParams.set("dateFrom", params.dateFrom)
   if (params.dateTo) searchParams.set("dateTo", params.dateTo)
@@ -187,6 +192,7 @@ export async function ScanDashboard({
   const resolvedSearchParams = (await searchParams) ?? {}
   const query = resolvedSearchParams.q?.trim().toLowerCase() ?? ""
   const selectedProblem = resolvedSearchParams.problem ?? ""
+  const selectedFormName = resolvedSearchParams.formName ?? ""
   const selectedLocation = resolvedSearchParams.location?.trim() ?? ""
   const selectedDateFrom = resolvedSearchParams.dateFrom ?? ""
   const selectedDateTo = resolvedSearchParams.dateTo ?? ""
@@ -201,6 +207,7 @@ export async function ScanDashboard({
 
   const where: Prisma.ScanWhereInput = {
     ...(selectedProblem ? { problem: selectedProblem } : {}),
+    ...(selectedFormName ? { formName: selectedFormName } : {}),
     ...(selectedLocation ? { location: selectedLocation } : {}),
     ...(dateFrom || dateTo ? { createdAt } : {}),
     ...(query
@@ -263,7 +270,8 @@ export async function ScanDashboard({
     matchesDateFilter(scan.createdAt, selectedDateFrom, selectedDateTo),
   )
 
-  const hairScans = filteredScans.filter((scan) => isHairProblem(scan.problem))
+  const hairScans = filteredScans.filter((scan) => isHairProblem(scan.problem) && scan.formName !== "scan lp online consultation")
+  const onlineConsultationScans = filteredScans.filter((scan) => scan.formName === "scan lp online consultation")
   const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize))
   const hasNewerPage = currentPage > 1
   const hasOlderPage = currentPage < totalPages
@@ -395,7 +403,7 @@ export async function ScanDashboard({
           </div>
         )}
 
-        <form className="grid gap-4 rounded-3xl border border-border bg-card/60 p-5 shadow-sm md:grid-cols-4">
+        <form className="grid gap-4 rounded-3xl border border-border bg-card/60 p-5 shadow-sm md:grid-cols-5">
           <div>
             <label htmlFor="dashboard-search" className="mb-2 block text-sm font-medium text-foreground">
               Search by name or phone
@@ -457,6 +465,22 @@ export async function ScanDashboard({
           </div>
 
           <div>
+            <label htmlFor="dashboard-form-name" className="mb-2 block text-sm font-medium text-foreground">
+              Lead Type
+            </label>
+            <select
+              id="dashboard-form-name"
+              name="formName"
+              defaultValue={selectedFormName}
+              className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-primary"
+            >
+              <option value="">All lead types</option>
+              <option value="website leads">Stage 1 Hair Scan</option>
+              <option value="scan lp online consultation">Stage 2 Online Consultation</option>
+            </select>
+          </div>
+
+          <div>
             <label className="mb-2 block text-sm font-medium text-foreground">
               Date range
             </label>
@@ -466,7 +490,7 @@ export async function ScanDashboard({
             />
           </div>
 
-          <div className="flex flex-wrap items-end gap-3 md:col-span-4">
+          <div className="flex flex-wrap items-end gap-3 md:col-span-5">
             <button
               type="submit"
               className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
@@ -524,6 +548,7 @@ export async function ScanDashboard({
 
         <div className="grid gap-6">
           {renderScanGrid(hairScans, "Hair Leads")}
+          {renderScanGrid(onlineConsultationScans, "Online Consultation Bookings")}
         </div>
       </div>
     </main>

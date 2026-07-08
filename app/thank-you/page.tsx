@@ -63,8 +63,8 @@ export default function ThankYouPage() {
             Thank You
           </h1>
           <p style={{ margin: "0 auto", maxWidth: "420px", lineHeight: 1.7, color: "#bdb8ae" }}>
-            Your details have been submitted successfully and your PDF should already be downloading.
-            Our team will connect with you soon.
+            Your online consultation request has been submitted successfully.
+            Our team will review your details and connect with you soon to confirm your consultation slot.
           </p>
 
           {/* Promo code section */}
