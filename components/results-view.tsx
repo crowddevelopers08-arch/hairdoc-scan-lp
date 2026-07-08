@@ -645,7 +645,7 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
           ) : (
             <Download style={{ width: 18, height: 18 }} />
           )}
-          {pdfGenerating ? "Generating..." : "Download PDF"}
+          {pdfGenerating ? "Generating..." : "Download Your Personal Report"}
         </button>
 
         <div
@@ -698,7 +698,7 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
             </div>
             <div style={{ flex: 1, minWidth: "160px" }}>
               <p style={{ fontWeight: 700, fontSize: "0.97rem", color: "#f2f0eb", marginBottom: "4px" }}>Download Your Personal Report</p>
-              <p style={{ fontSize: "0.82rem", color: "#8a8a8a", lineHeight: 1.5 }}>Download PDF</p>
+              <p style={{ fontSize: "0.82rem", color: "#8a8a8a", lineHeight: 1.5 }}>Download Your Personal Report</p>
             </div>
             <button
               onClick={handleDownload}
@@ -725,7 +725,7 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
               ) : (
                 <Download style={{ width: 16, height: 16 }} />
               )}
-              {pdfGenerating ? "Generating..." : "Download PDF"}
+              {pdfGenerating ? "Generating..." : "Download Your Personal Report"}
             </button>
           </div>
         </div>

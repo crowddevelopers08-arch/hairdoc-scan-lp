@@ -170,7 +170,7 @@ export function SkinResultsView({ formData, capturedImage, onBack }: SkinResults
 
         <button onClick={handleDownload} disabled={pdfGenerating} className="mobile-dl-btn" style={{ alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", marginBottom: "20px", background: "#ddb95a", color: "#080b12", border: "none", borderRadius: "12px", padding: "14px", fontSize: "1rem", fontWeight: 700, cursor: pdfGenerating ? "not-allowed" : "pointer", opacity: pdfGenerating ? 0.7 : 1, boxShadow: "0 0 24px rgba(221,185,90,0.3)" }}>
           {pdfGenerating ? <Loader2 style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} /> : <Download style={{ width: 18, height: 18 }} />}
-          {pdfGenerating ? "Generating..." : "Download PDF"}
+          {pdfGenerating ? "Generating..." : "Download Your Personal Report"}
         </button>
 
         <div style={{ background: "linear-gradient(145deg, #0e1118, #0a0d15)", border: "1px solid rgba(221,185,90,0.2)", borderRadius: "18px", padding: "28px", marginBottom: "20px", position: "relative", overflow: "hidden", boxShadow: "0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(221,185,90,0.07)" }}>
@@ -193,7 +193,7 @@ export function SkinResultsView({ formData, capturedImage, onBack }: SkinResults
             </div>
             <button onClick={handleDownload} disabled={pdfGenerating} className="pdf-dl-btn" style={{ alignItems: "center", gap: "8px", background: "#ddb95a", color: "#080b12", border: "none", borderRadius: "10px", padding: "11px 22px", fontSize: "0.9rem", fontWeight: 700, cursor: pdfGenerating ? "not-allowed" : "pointer", opacity: pdfGenerating ? 0.7 : 1, boxShadow: "0 0 20px rgba(221,185,90,0.3)", transition: "all 0.2s" }}>
               {pdfGenerating ? <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} /> : <Download style={{ width: 16, height: 16 }} />}
-              {pdfGenerating ? "Generating..." : "Download PDF"}
+              {pdfGenerating ? "Generating..." : "Download Your Personal Report"}
             </button>
           </div>
         </div>
@@ -279,7 +279,7 @@ export function SkinResultsView({ formData, capturedImage, onBack }: SkinResults
 
               <Button type="submit" disabled={!pdfForm.name.trim() || !pdfForm.phone.trim() || clinicVisit !== "yes"} className="mt-2 w-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(221,185,90,0.4)] disabled:opacity-50">
                 <Download className="mr-2 h-4 w-4" />
-                Generate & Download PDF
+                Generate & Download Your Personal Report
               </Button>
             </form>
           )}
