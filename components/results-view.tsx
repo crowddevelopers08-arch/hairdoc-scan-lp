@@ -374,7 +374,6 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
             justify-content: center;
             border-radius: 14px !important;
             padding: 14px 18px !important;
-            animation: none;
           }
         }
       `}</style>
@@ -670,7 +669,8 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
             borderRadius: "18px",
             padding: "28px",
             textAlign: "center",
-            marginBottom: "30px",
+            marginBottom: "3+px",
+   
             boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
           }}
         >
