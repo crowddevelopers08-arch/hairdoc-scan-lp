@@ -725,7 +725,7 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
               ) : (
                 <Download style={{ width: 16, height: 16 }} />
               )}
-              {pdfGenerating ? "Generating..." : "Download Your Personal Report"}
+              {pdfGenerating ? "Generating..." : "Download PDF"}
             </button>
           </div>
         </div>
