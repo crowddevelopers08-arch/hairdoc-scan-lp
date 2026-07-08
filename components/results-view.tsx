@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, ArrowLeft, Download, CheckCircle2, Loader2 } from "lucide-react"
+import { ArrowLeft, Download, CheckCircle2, Loader2 } from "lucide-react"
 import type { FormData } from "./form-modal"
 
 interface ResultsViewProps {
@@ -153,9 +153,10 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080b12", color: "#f2f0eb", padding: "0" }}>
+    <div className="results-shell" style={{ minHeight: "100vh", background: "#080b12", color: "#f2f0eb", padding: "0" }}>
       <style>{`
-        .pdf-card-inner { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .pdf-card-inner { display: flex; align-items: center; justify-content: flex-end; gap: 18px; flex-wrap: wrap; }
+        .pdf-desktop-card { display: block; }
         .pdf-dl-btn { display: flex; flex-shrink: 0; }
         .mobile-dl-btn { display: none; }
         .assessment-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -175,6 +176,10 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
         }
         .consultation-button {
           animation: consultationButtonPulse 5s ease-in-out infinite;
+        }
+        .consultation-button-wrap {
+          display: flex;
+          justify-content: center;
         }
         .consultation-form-overlay {
           position: fixed;
@@ -341,12 +346,36 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
           94% { transform: scale(0.98); box-shadow: 0 0 18px rgba(245,194,0,0.24); }
         }
         @media (max-width: 480px) {
+          .results-shell { padding-bottom: 142px; }
+          .pdf-desktop-card { display: none; }
           .pdf-card-inner { flex-direction: column; align-items: stretch; }
           .pdf-dl-btn { display: none; }
           .mobile-dl-btn { display: flex; }
           .assessment-grid { grid-template-columns: 1fr; }
           .consultation-form-schedule { grid-template-columns: 1fr; }
           .consultation-time-grid { grid-template-columns: 1fr; }
+          .consultation-button-wrap {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 20;
+            padding: 12px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+            margin: 0;
+            justify-content: stretch;
+            background: rgba(8,11,18,0.96);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(245,194,0,0.16);
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.35);
+          }
+          .consultation-button {
+            width: 100%;
+            justify-content: center;
+            border-radius: 14px !important;
+            padding: 14px 18px !important;
+            animation: none;
+          }
         }
       `}</style>
       <div
@@ -565,7 +594,7 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
           ) : (
             <Download style={{ width: 18, height: 18 }} />
           )}
-          {pdfGenerating ? "Generating..." : "Download Your Personal Report"}
+          {pdfGenerating ? "Generating..." : "Know more about hair doc"}
         </button>
 
         <div
@@ -587,39 +616,23 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
         </div>
 
         <div
+          className="pdf-desktop-card"
           style={{
             background: "linear-gradient(135deg, rgba(245,194,0,0.12), rgba(245,194,0,0.04))",
             border: "1px solid rgba(245,194,0,0.35)",
             borderRadius: "18px",
             padding: "24px 28px",
             marginBottom: "20px",
+            marginInline: "auto",
             position: "relative",
             overflow: "hidden",
             boxShadow: "0 4px 30px rgba(245,194,0,0.08)",
+            width: "fit-content",
+            maxWidth: "100%",
           }}
         >
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, #F5C200, transparent)" }} />
           <div className="pdf-card-inner">
-            <div
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: "14px",
-                flexShrink: 0,
-                border: "1px solid rgba(245,194,0,0.4)",
-                background: "rgba(245,194,0,0.12)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 0 18px rgba(245,194,0,0.15)",
-              }}
-            >
-              <FileText style={{ width: 24, height: 24, color: "#F5C200" }} />
-            </div>
-            <div style={{ flex: 1, minWidth: "160px" }}>
-              <p style={{ fontWeight: 700, fontSize: "0.97rem", color: "#f2f0eb", marginBottom: "4px" }}>Download Your Personal Report</p>
-              <p style={{ fontSize: "0.82rem", color: "#8a8a8a", lineHeight: 1.5 }}>Download Your Personal Report</p>
-            </div>
             <button
               onClick={handleDownload}
               disabled={pdfGenerating}
@@ -645,7 +658,7 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
               ) : (
                 <Download style={{ width: 16, height: 16 }} />
               )}
-              {pdfGenerating ? "Generating..." : "Download PDF"}
+              {pdfGenerating ? "Generating..." : "Know more about hair doc"}
             </button>
           </div>
         </div>
@@ -657,6 +670,7 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
             borderRadius: "18px",
             padding: "28px",
             textAlign: "center",
+            marginBottom: "30px",
             boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
           }}
         >
@@ -677,28 +691,30 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
               <div className="assessment-card">Personalised treatment recommendations</div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={openConsultationForm}
-            className="consultation-button"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              background: "#F5C200",
-              color: "#080b12",
-              borderRadius: "10px",
-              border: "none",
-              padding: "12px 28px",
-              fontSize: "1rem",
-              fontWeight: 700,
-              boxShadow: "0 0 24px rgba(245,194,0,0.3)",
-              transition: "all 0.2s",
-              cursor: "pointer",
-            }}
-          >
-            Book Your Online Consultation
-          </button>
+          <div className="consultation-button-wrap">
+            <button
+              type="button"
+              onClick={openConsultationForm}
+              className="consultation-button"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "#F5C200",
+                color: "#080b12",
+                borderRadius: "10px",
+                border: "none",
+                padding: "12px 28px",
+                fontSize: "1rem",
+                fontWeight: 700,
+                boxShadow: "0 0 24px rgba(245,194,0,0.3)",
+                transition: "all 0.2s",
+                cursor: "pointer",
+              }}
+            >
+              Book Your Online Consultation
+            </button>
+          </div>
         </div>
       </div>
     </div>
