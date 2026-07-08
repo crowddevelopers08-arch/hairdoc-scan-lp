@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { FileText, ArrowLeft, Download, CheckCircle2, Loader2 } from "lucide-react"
 import type { FormData } from "./form-modal"
 
@@ -32,7 +32,6 @@ async function downloadFromPublic(pdfPath: string, fileName: string) {
 
 export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProps) {
   const [pdfGenerating, setPdfGenerating] = useState(false)
-  const [showConsultationPopup, setShowConsultationPopup] = useState(false)
   const [showConsultationForm, setShowConsultationForm] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [consultationSaving, setConsultationSaving] = useState(false)
@@ -80,7 +79,6 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
   const today = new Date().toISOString().split("T")[0]
 
   const openConsultationForm = () => {
-    setShowConsultationPopup(false)
     setConsultationSubmitted(false)
     setConsultationSubmitError("")
     setConsultationForm((current) => ({
@@ -154,23 +152,6 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
     }
   }
 
-  useEffect(() => {
-    let hideTimeout: number | undefined
-
-    const interval = window.setInterval(() => {
-      if (showConsultationForm) return
-      setShowConsultationPopup(true)
-      hideTimeout = window.setTimeout(() => setShowConsultationPopup(false), 1400)
-    }, 5000)
-
-    return () => {
-      window.clearInterval(interval)
-      if (hideTimeout) {
-        window.clearTimeout(hideTimeout)
-      }
-    }
-  }, [showConsultationForm])
-
   return (
     <div style={{ minHeight: "100vh", background: "#080b12", color: "#f2f0eb", padding: "0" }}>
       <style>{`
@@ -192,56 +173,8 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
           line-height: 1.35;
           box-shadow: inset 0 1px 0 rgba(245,194,0,0.08);
         }
-        .consultation-popup {
-          position: fixed;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(8,11,18,0.46);
-          backdrop-filter: blur(3px);
-          -webkit-backdrop-filter: blur(3px);
-          z-index: 30;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0.25s ease;
-        }
-        .consultation-popup-card {
-          min-width: min(92vw, 420px);
-          max-width: 92vw;
-          transform: translateY(16px) scale(0.92);
-          border-radius: 22px;
-          border: 1px solid rgba(245,194,0,0.35);
-          background: linear-gradient(145deg, rgba(14,17,24,0.98), rgba(10,13,21,0.98));
-          padding: 18px 18px 20px;
-          box-shadow: 0 18px 60px rgba(0,0,0,0.45), 0 0 30px rgba(245,194,0,0.12);
-          text-align: center;
-        }
-        .consultation-popup.visible {
-          opacity: 1;
-          pointer-events: auto;
-        }
-        .consultation-popup.visible .consultation-popup-card {
-          animation: consultationPopup 1.4s ease;
-        }
         .consultation-button {
           animation: consultationButtonPulse 5s ease-in-out infinite;
-        }
-        .consultation-popup-button {
-          left: 50%;
-          background: #F5C200;
-          color: #080b12;
-          border-radius: 12px;
-          padding: 14px 24px;
-          font-size: 1rem;
-          font-weight: 700;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 0 26px rgba(245,194,0,0.34);
-          border: none;
-          cursor: pointer;
         }
         .consultation-form-overlay {
           position: fixed;
@@ -402,12 +335,6 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
           box-shadow: 0 20px 70px rgba(0,0,0,0.45), 0 0 30px rgba(245,194,0,0.1);
           padding: 24px;
         }
-        @keyframes consultationPopup {
-          0% { opacity: 0; transform: translateY(18px) scale(0.9); }
-          18% { opacity: 1; transform: translateY(0) scale(1.04); }
-          78% { opacity: 1; transform: translateY(0) scale(1); }
-          100% { opacity: 0; transform: translateY(-10px) scale(0.98); }
-        }
         @keyframes consultationButtonPulse {
           0%, 82%, 100% { transform: scale(1); box-shadow: 0 0 24px rgba(245,194,0,0.3); }
           88% { transform: scale(1.06); box-shadow: 0 0 34px rgba(245,194,0,0.45); }
@@ -431,13 +358,6 @@ export function ResultsView({ formData, capturedImage, onBack }: ResultsViewProp
           zIndex: 0,
         }}
       />
-      <div className={`consultation-popup${showConsultationPopup && !showConsultationForm ? " visible" : ""}`}>
-        <div className="consultation-popup-card">
-          <button type="button" onClick={openConsultationForm} className="consultation-popup-button">
-            Book Your Online Consultation
-          </button>
-        </div>
-      </div>
       {showConsultationForm && (
         <div className="consultation-form-overlay" onClick={closeConsultationForm}>
           <div className="consultation-form-card" onClick={(event) => event.stopPropagation()}>
